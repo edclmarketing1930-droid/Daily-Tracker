@@ -1,0 +1,945 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Dairy Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: sticky header + tab bar, one working column up to 1200px; wide month grid scrolls inside its own container. */
+:root{
+  --bg:#f3f6f8; --surface:#ffffff; --surface2:#eaf0f4; --ink:#10202b; --ink2:#4b5e6b; --line:#d6e0e7;
+  --accent:#1559c1; --accent-ink:#ffffff; --accent-soft:#e4eefc;
+  --good:#17703f; --good-bg:#e1f3e8; --bad:#b52a25; --bad-bg:#fbe6e5; --idle:#56656f; --idle-bg:#e7edf1;
+  --warn-bg:#fff2d6; --warn:#7a5200;
+  --dtm:#2a67d1; --tm:#0f8574; --ghee:#b87a05;
+  --f-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --f-head:'Space Grotesk','Inter',system-ui,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d171d; --surface:#15222a; --surface2:#1c2d37; --ink:#e7eef2; --ink2:#9db1be; --line:#2a3d49;
+  --accent:#6fa6ff; --accent-ink:#08141f; --accent-soft:#1b2f4a;
+  --good:#6fd496; --good-bg:#14301f; --bad:#ff8f89; --bad-bg:#3a1b1a; --idle:#a2b0ba; --idle-bg:#25343d;
+  --warn-bg:#3a2f12; --warn:#f2cd75;
+  --dtm:#7aaaff; --tm:#4fd0bc; --ghee:#f1bb52; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d171d; --surface:#15222a; --surface2:#1c2d37; --ink:#e7eef2; --ink2:#9db1be; --line:#2a3d49;
+  --accent:#6fa6ff; --accent-ink:#08141f; --accent-soft:#1b2f4a;
+  --good:#6fd496; --good-bg:#14301f; --bad:#ff8f89; --bad-bg:#3a1b1a; --idle:#a2b0ba; --idle-bg:#25343d;
+  --warn-bg:#3a2f12; --warn:#f2cd75;
+  --dtm:#7aaaff; --tm:#4fd0bc; --ghee:#f1bb52; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar .wrap{padding-block:0}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px 4px}
+.brand{font-family:var(--f-head);font-weight:700;font-size:20px;letter-spacing:-.01em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.brand small{display:block;font-family:var(--f-body);font-weight:500;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2)}
+.tabs{display:flex;gap:4px;overflow-x:auto}
+.tab{appearance:none;border:0;background:none;color:var(--ink2);font:600 14px var(--f-body);padding:10px 14px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.badge{background:var(--bad);color:#fff;border-radius:99px;font-size:12px;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+main{padding-block:16px 96px}
+h2{font-family:var(--f-head);font-size:22px;margin:0 0 4px;letter-spacing:-.01em}
+h3{font-family:var(--f-head);font-size:16px;margin:0 0 8px}
+.muted{color:var(--ink2)}
+.small{font-size:13px}
+button,input,select,textarea{font:inherit;color:inherit}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 14px;font-weight:600;font-size:14px;cursor:pointer;min-height:40px;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.solid{background:var(--bad);color:#fff}
+.btn.sm{min-height:34px;padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.link{appearance:none;border:0;background:none;color:inherit;text-decoration:underline;font-weight:700;cursor:pointer;padding:0}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-height:40px}
+textarea{min-height:76px;resize:vertical}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:disabled{background:var(--surface2);color:var(--ink2)}
+label.fl{display:block;font-weight:600;font-size:13px;margin-bottom:4px}
+.field{margin-bottom:14px}
+.err{color:var(--bad);font-size:13px;margin-top:4px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.toolbar .grow{flex:1 1 200px;min-width:0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card h3{margin:0;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border-radius:99px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--surface2);color:var(--ink2);white-space:nowrap}
+.pchip{display:inline-flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:99px;padding:2px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.p-DTM .dot,.dot.p-DTM{background:var(--dtm)} .p-TM .dot,.dot.p-TM{background:var(--tm)} .p-Ghee .dot,.dot.p-Ghee{background:var(--ghee)}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pill{border-radius:99px;padding:3px 11px;font-size:12px;font-weight:700;white-space:nowrap}
+.pill.logged{background:var(--good-bg);color:var(--good)} .pill.pending{background:var(--bad-bg);color:var(--bad)} .pill.none{background:var(--idle-bg);color:var(--idle)}
+.alert{background:var(--bad-bg);color:var(--bad);border-bottom:1px solid var(--bad)}
+.alert .wrap{display:flex;gap:10px;align-items:flex-start;padding-block:10px}
+.alert .msg{flex:1;min-width:0}
+.alert .x{appearance:none;border:0;background:none;font-size:20px;line-height:1;cursor:pointer;color:inherit;padding:2px 6px}
+.ro{background:var(--warn-bg);color:var(--warn);padding:8px 12px;border-radius:8px;margin-bottom:12px;font-weight:600}
+.datebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.datebar .lbl{font-family:var(--f-head);font-weight:700;font-size:20px;flex:1 1 180px;text-align:center}
+.datebar input[type=date]{width:auto}
+.sumbar{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
+.stat b{display:block;font-family:var(--f-head);font-size:24px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);display:flex;gap:6px;align-items:center}
+.row{background:var(--surface);border:1px solid var(--line);border-left-width:6px;border-radius:var(--r);padding:12px 14px;margin-bottom:10px;scroll-margin-top:150px}
+.row.s-logged{border-left-color:var(--good)} .row.s-pending{border-left-color:var(--bad)} .row.s-none{border-left-color:var(--idle)}
+.row.flash{animation:flash 1.6s ease}
+@keyframes flash{0%,60%{box-shadow:0 0 0 4px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
+@media (prefers-reduced-motion:reduce){.row.flash{animation:none;outline:3px solid var(--accent)}}
+.qs{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px}
+.q{display:flex;flex-direction:column;gap:3px;min-width:104px;flex:1 1 104px;max-width:180px}
+.q .n{font-size:12px;font-weight:700;display:flex;gap:6px;align-items:center;color:var(--ink2)}
+.q .u{font-size:12px;color:var(--ink2)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--surface);padding:8px 12px;font-weight:600;font-size:13px;cursor:pointer;color:var(--ink2);min-height:38px}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button[aria-pressed="true"] .muted{color:inherit;opacity:.85}
+.seg button{white-space:nowrap}
+.hscroll{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);max-width:100%}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;font-size:13px;white-space:nowrap}
+th{background:var(--surface2);font-weight:700;position:sticky;top:0}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:2;min-width:140px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+th:first-child{background:var(--surface2);z-index:3}
+td.miss{background:var(--bad-bg);color:var(--bad);font-weight:700}
+td.none{background:var(--idle-bg);color:var(--idle)}
+td.tot,th.tot{background:var(--accent-soft);font-weight:700}
+tfoot td{font-weight:700;background:var(--surface2)}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink2);margin:8px 0 18px}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block}
+.reports{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:8px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:28px 18px;text-align:center}
+.empty h3{font-size:18px}
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(5,12,18,.55);display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-right,0px))}
+.sheet{background:var(--surface);border-radius:14px;width:100%;max-width:640px;padding:18px;margin:auto;border:1px solid var(--line)}
+#confirm .overlay{z-index:60;align-items:center}
+.sheet .foot{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px}
+.contact{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:10px;background:var(--bg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:8px;align-items:start}
+@media (max-width:560px){.grid3{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+.prow{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.prow .nm{flex:1 1 150px;font-weight:600;display:flex;gap:8px;align-items:center}
+.prow input[type=number]{width:110px}
+.days{display:flex;flex-wrap:wrap;gap:8px}
+.days label{border:1px solid var(--line);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:600;display:flex;gap:6px;align-items:center;min-height:40px}
+.days label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:80;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.toast.bad{background:var(--bad);color:#fff}
+.note{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-size:13px;margin:10px 0}
+hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+</style>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="head">
+      <div class="brand"><span id="brand">Dairy Desk</span><small>Orders &amp; reports</small></div>
+      <button class="btn sm" type="button" data-act="settings">Settings &amp; data</button>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist"></nav>
+  </div>
+</div>
+<div id="alert"></div>
+<div class="wrap"><main id="view"><div class="empty"><h3>Connecting to your data…</h3><p class="muted">If this takes more than a few seconds, check your connection.</p></div></main></div>
+<div id="modal"></div>
+<div id="confirm"></div>
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ---------- constants & helpers ---------- */
+var TZ='Asia/Kolkata';
+var PRODUCTS=[{k:'DTM',name:'Double Toned Milk'},{k:'TM',name:'Toned Milk'},{k:'Ghee',name:'Ghee'}];
+var DOW=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+var DOWFULL=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+var MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var DEFAULT_UNITS={DTM:'litres',TM:'litres',Ghee:'kg'};
+var pad=function(n){return String(n).padStart(2,'0')};
+function todayIso(){return new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())}
+function nowStamp(){return new Intl.DateTimeFormat('en-GB',{timeZone:TZ,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date()).replace(/\//g,'-').replace(',','')+' IST'}
+function fmt(iso){return iso.split('-').reverse().join('-')}
+function ymd(iso){return iso.split('-').map(Number)}
+function addDays(iso,n){var a=ymd(iso);var t=new Date(Date.UTC(a[0],a[1]-1,a[2]+n));return t.getUTCFullYear()+'-'+pad(t.getUTCMonth()+1)+'-'+pad(t.getUTCDate())}
+function dow(iso){var a=ymd(iso);var g=new Date(Date.UTC(a[0],a[1]-1,a[2])).getUTCDay();return g===0?7:g}
+function dim(ym){var a=ym.split('-').map(Number);return new Date(Date.UTC(a[0],a[1],0)).getUTCDate()}
+function monthDays(ym){var n=dim(ym),o=[];for(var i=1;i<=n;i++)o.push(ym+'-'+pad(i));return o}
+function monthLabel(ym){var a=ym.split('-').map(Number);return MONTHS[a[1]-1]+' '+a[0]}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function q2(v){var n=Math.round(Number(v)*100)/100;return isNaN(n)?'':String(n)}
+function unitS(u){return String(u||'').replace(/s$/i,'')}
+function normName(s){return String(s||'').trim().replace(/\s+/g,' ').toLowerCase()}
+function byName(a,b){return a.name.localeCompare(b.name,undefined,{sensitivity:'base'})}
+function plural(n,w){return n+' '+w+(n===1?'':'s')}
+function fileSafe(s){return String(s).replace(/[^A-Za-z0-9\-]+/g,'_').replace(/^_|_$/g,'')}
+function $(s){return document.querySelector(s)}
+
+/* ---------- state ---------- */
+var S={
+  tab:'daily', clients:[], settings:{dairyName:'Express Dairy',units:Object.assign({},DEFAULT_UNITS)}, settingsRaw:{},
+  orders:{}, ready:{clients:false,settings:false}, readyM:{}, slow:false, readOnly:false,
+  date:todayIso(), month:todayIso().slice(0,7), mprod:'ALL', q:'', sort:'asc', showArchived:false, assign:'', dAssign:'',
+  booted:false, drafts:{}, alertDismissed:'', popupShown:false, repClient:'', repProd:'DTM', busy:''
+};
+var db=null, dl=null, subs={}, queue=Promise.resolve(), F=null, flashId=null;
+
+function unit(p){return (S.settings.units&&S.settings.units[p])||DEFAULT_UNITS[p]}
+function entryOf(date,cid){return (S.orders[date]||{})[cid]||null}
+function isExpected(c,d){
+  if(!(c.days||[]).includes(dow(d)))return false;
+  if(c.activeFrom&&d<c.activeFrom)return false;
+  if(c.archivedOn&&d>=c.archivedOn)return false;
+  return true;
+}
+function dueClients(date){return S.clients.filter(function(c){return !c.archived&&isExpected(c,date)}).sort(byName)}
+function matchAssign(c,a){if(!a)return true;if(a==='__none')return !(c.assignedTo||'').trim();return normName(c.assignedTo)===normName(a)}
+function dueFiltered(date){return dueClients(date).filter(function(c){return matchAssign(c,S.dAssign)})}
+function statusOf(date,cid){var e=entryOf(date,cid);return e?(e.status==='logged'?'logged':'none'):'pending'}
+function pendingList(date){return dueClients(date).filter(function(c){return statusOf(date,c.id)==='pending'})}
+function dataReady(){return S.ready.clients&&S.ready.settings&&S.readyM[S.date.slice(0,7)]}
+
+/* ---------- storage layer ---------- */
+function enqueue(fn){var run=queue.then(function(){return fn()});queue=run.catch(function(){});return run}
+function errMsg(e){return (e&&(e.message||e.code))||'Something went wrong. Try again.'}
+async function guard(p){try{await p;return true}catch(e){toast(errMsg(e),'bad');return false}}
+function mutateOrders(date,fn){
+  return enqueue(async function(){
+    var ref=db.doc('orders/'+date);var snap=await ref.get();var cur=snap.exists?snap.data():null;
+    var entries=Object.assign({},(cur&&cur.entries)||{});fn(entries);
+    if(!Object.keys(entries).length){if(cur)await ref.delete()}
+    else await ref.set({date:date,month:date.slice(0,7),entries:entries});
+  });
+}
+function saveClientDoc(id,obj){var o=Object.assign({},obj);delete o.id;return enqueue(function(){return db.doc('clients/'+id).set(o)})}
+function saveSettings(patch){
+  var raw=Object.assign({},S.settingsRaw,patch);
+  return enqueue(function(){return db.doc('settings/main').set(raw)});
+}
+function ensureMonth(ym){
+  if(subs[ym]||!db)return;
+  subs[ym]=db.collection('orders').where('month','==',ym).onSnapshot(function(snap){
+    Object.keys(S.orders).forEach(function(k){if(k.indexOf(ym)===0)delete S.orders[k]});
+    snap.docs.forEach(function(d){S.orders[d.id]=(d.data()||{}).entries||{}});
+    S.readyM[ym]=true;afterData();
+  },onErr);
+}
+function onErr(e){if(e&&e.code==='revoked')toast('Access to this page was changed. Reload to continue.','bad');else toast('Could not read data: '+errMsg(e),'bad')}
+function subscribeBase(){
+  db.collection('clients').onSnapshot(function(snap){
+    S.clients=snap.docs.map(function(d){return Object.assign({id:d.id},d.data())});
+    S.ready.clients=true;afterData();
+  },onErr);
+  db.doc('settings/main').onSnapshot(function(snap){
+    var d=snap.exists?snap.data():{};S.settingsRaw=d;
+    S.settings={dairyName:d.dairyName||'Express Dairy',units:Object.assign({},DEFAULT_UNITS,d.units||{})};
+    S.ready.settings=true;afterData();
+  },onErr);
+  ensureMonth(S.date.slice(0,7));ensureMonth(S.month);
+}
+function afterData(){
+  render();
+  if(!S.popupShown&&dataReady()){
+    S.popupShown=true;var p=pendingList(todayIso());
+    if(p.length&&S.date===todayIso())showPopup(p);
+  }
+}
+
+/* ---------- toast & confirm ---------- */
+var toastT=null;
+function toast(msg,kind){
+  var t=$('#toast');t.innerHTML='<div class="toast '+(kind||'')+'" role="status">'+esc(msg)+'</div>';
+  clearTimeout(toastT);toastT=setTimeout(function(){t.innerHTML=''},kind==='bad'?6000:3200);
+}
+function ask(title,msg,okLabel,danger){
+  return new Promise(function(res){
+    var c=$('#confirm');
+    c.innerHTML='<div class="overlay"><div class="sheet" role="alertdialog" aria-modal="true" style="max-width:460px"><h3>'+esc(title)+'</h3><p style="margin:0 0 14px">'+esc(msg)+'</p><div class="foot"><button class="btn" type="button" id="cNo">Cancel</button><button class="btn '+(danger?'danger solid':'primary')+'" type="button" id="cYes">'+esc(okLabel)+'</button></div></div></div>';
+    function done(v){c.innerHTML='';res(v)}
+    $('#cNo').onclick=function(){done(false)};$('#cYes').onclick=function(){done(true)};$('#cNo').focus();
+  });
+}
+
+/* ---------- rendering ---------- */
+function render(){
+  var act=document.activeElement,fk=null;
+  if(act&&act.dataset){
+    if(act.dataset.draft)fk={a:'data-draft',v:act.dataset.draft};
+    else if(act.id==='search')fk={a:'id',v:'search',s:act.selectionStart,e:act.selectionEnd};
+  }
+  var sl=[].map.call(document.querySelectorAll('.hscroll'),function(e){return e.scrollLeft});
+  $('#brand').textContent=S.settings.dairyName;
+  renderTabs();renderAlert();
+  var v=$('#view');
+  if(!S.booted){v.innerHTML='<div class="empty"><h3>Connecting to your data…</h3><p class="muted">This usually takes a moment.</p></div>';return}
+  if(!db){v.innerHTML='<div class="empty"><h3>Storage is not available here</h3><p class="muted">Open this page from Claude (claude.ai or the Claude app) so your clients and orders can be saved.</p></div>';return}
+  if(!S.ready.clients||!S.ready.settings){v.innerHTML='<div class="empty"><h3>Connecting to your data…</h3><p class="muted">'+(S.slow?'Still trying to reach the database. Your data is safe; check your connection.':'This usually takes a moment.')+'</p></div>';return}
+  v.innerHTML=(S.readOnly?'<div class="ro">You have view-only access. Changes cannot be saved from this account.</div>':'')+(S.tab==='clients'?viewClients():S.tab==='daily'?viewDaily():viewMonthly());
+  if(fk){var el=document.querySelector('['+fk.a+'="'+fk.v+'"]');if(el){el.focus();try{if(fk.s!=null)el.setSelectionRange(fk.s,fk.e)}catch(x){}}}
+  [].forEach.call(document.querySelectorAll('.hscroll'),function(e,i){if(sl[i])e.scrollLeft=sl[i]});
+  if(flashId){var r=document.getElementById('row-'+flashId);if(r){r.scrollIntoView({block:'center',behavior:'smooth'});r.classList.add('flash')}flashId=null}
+}
+function renderTabs(){
+  var pend=dataReady()?pendingList(S.date).length:0;
+  var T=[['clients','Clients'],['daily','Daily orders'],['monthly','Monthly']];
+  $('#tabs').innerHTML=T.map(function(t){
+    return '<button class="tab" role="tab" type="button" data-act="tab" data-id="'+t[0]+'" aria-selected="'+(S.tab===t[0])+'">'+t[1]+(t[0]==='daily'&&pend?'<span class="badge" aria-label="'+pend+' yet to be logged">'+pend+'</span>':'')+'</button>';
+  }).join('');
+}
+function renderAlert(){
+  var a=$('#alert');
+  if(!dataReady()){a.innerHTML='';return}
+  var p=pendingList(S.date);var key=S.date+':'+p.map(function(c){return c.id}).join(',');
+  if(!p.length||S.alertDismissed===key){a.innerHTML='';return}
+  var when=S.date===todayIso()?'today':'for '+fmt(S.date);
+  a.innerHTML='<div class="alert" role="alert"><div class="wrap"><div class="msg"><strong>'+plural(p.length,'client')+' yet to be logged</strong> '+when+': '+
+    p.map(function(c){return '<button class="link" type="button" data-act="goto" data-id="'+esc(c.id)+'">'+esc(c.name)+'</button>'}).join(', ')+
+    '</div><button class="x" type="button" data-act="dismissAlert" aria-label="Dismiss">&times;</button></div></div>';
+}
+function showPopup(p){
+  $('#modal').innerHTML='<div class="overlay"><div class="sheet" style="max-width:460px" role="alertdialog" aria-modal="true"><h3>'+plural(p.length,'client')+' yet to be logged today</h3><p class="muted small" style="margin-top:0">Tap a name to jump to their entry.</p><div style="display:flex;flex-direction:column;gap:6px">'+
+   p.map(function(c){return '<button class="btn" type="button" data-act="goto" data-id="'+esc(c.id)+'" style="justify-content:flex-start">'+esc(c.name)+'</button>'}).join('')+
+   '</div><div class="foot"><button class="btn" type="button" data-act="closeModal">Close</button></div></div></div>';
+}
+
+/* ----- Clients tab ----- */
+function clientMatches(c,q){
+  if(!q)return true;q=q.toLowerCase();
+  var hay=[c.name,c.billingName,c.address,c.assignedTo||''].concat((c.contacts||[]).map(function(x){return x.name+' '+x.phone+' '+(x.role||'')})).join(' ').toLowerCase();
+  return hay.indexOf(q)>=0;
+}
+function daysText(d){d=(d||[]).slice().sort();if(d.length===7)return 'Every day';return d.map(function(x){return DOW[x-1]}).join(', ')}
+function assignees(){
+  var seen={},out=[];
+  S.clients.forEach(function(c){var n=(c.assignedTo||'').trim();if(!n)return;var k=normName(n);if(!seen[k]){seen[k]=1;out.push(n)}});
+  return out.sort(function(a,b){return a.localeCompare(b,undefined,{sensitivity:'base'})});
+}
+function viewClients(){
+  var active=S.clients.filter(function(c){return !c.archived}),arch=S.clients.filter(function(c){return c.archived});
+  var list=(S.showArchived?arch:active).filter(function(c){
+    if(!clientMatches(c,S.q))return false;
+    if(S.assign==='__none')return !(c.assignedTo||'').trim();
+    if(S.assign)return normName(c.assignedTo)===normName(S.assign);
+    return true;
+  }).sort(byName);
+  var names=assignees();
+  if(S.sort==='desc')list.reverse();
+  var h='<div class="toolbar"><div style="flex:1 1 100%"><h2>Clients</h2><div class="muted small">'+plural(active.length,'active client')+(arch.length?' · '+arch.length+' archived':'')+'</div></div>'+
+   '<div class="grow"><input id="search" type="text" placeholder="Search name, phone, address, assigned person…" value="'+esc(S.q)+'" aria-label="Search clients"></div>'+
+   '<select id="assignSel" data-sel="assign" style="width:auto" aria-label="Filter by assigned person"><option value="">All assigned people</option>'+names.map(function(n){return '<option value="'+esc(n)+'"'+(normName(n)===normName(S.assign)?' selected':'')+'>'+esc(n)+'</option>'}).join('')+'<option value="__none"'+(S.assign==='__none'?' selected':'')+'>Unassigned</option></select>'+
+   '<select id="sortSel" data-sel="sort" style="width:auto" aria-label="Sort"><option value="asc"'+(S.sort==='asc'?' selected':'')+'>Name A–Z</option><option value="desc"'+(S.sort==='desc'?' selected':'')+'>Name Z–A</option></select>'+
+   '<div class="seg"><button type="button" data-act="showArch" data-id="0" aria-pressed="'+!S.showArchived+'">Active</button><button type="button" data-act="showArch" data-id="1" aria-pressed="'+S.showArchived+'">Archived ('+arch.length+')</button></div>'+
+   '</div><div class="toolbar">'+
+   (S.showArchived?'':'<button class="btn primary" type="button" data-act="addClient"'+(S.readOnly?' disabled':'')+'>+ Add client</button>')+
+   '<button class="btn" type="button" data-act="masterPdf"'+(active.length?'':' disabled')+'>Download Master List (PDF)</button></div>';
+  if(!S.clients.length){
+    return h+'<div class="empty"><h3>No clients yet</h3><p class="muted">Add your first client, or load a small set of sample clients and orders to try every feature. You can clear the samples at any time.</p><div class="actions" style="justify-content:center"><button class="btn primary" type="button" data-act="addClient">Add first client</button><button class="btn" type="button" data-act="loadSample">Load sample data</button></div></div>';
+  }
+  if(!list.length)return h+'<div class="empty">'+(S.showArchived?'No archived clients.':'No clients match your search.')+'</div>';
+  return h+'<div class="cards">'+list.map(clientCard).join('')+'</div>';
+}
+function clientCard(c){
+  var contacts=(c.contacts||[]).map(function(x){return '<div class="small">'+esc(x.name)+(x.role?' <span class="muted">('+esc(x.role)+')</span>':'')+' · '+esc(x.phone)+'</div>'}).join('');
+  var prods=PRODUCTS.filter(function(p){return c.products&&c.products[p.k]!=null}).map(function(p){
+    return '<span class="pchip p-'+p.k+'"><i class="dot"></i>'+p.k+' '+q2(c.products[p.k])+' '+esc(unit(p.k))+(c.rates&&c.rates[p.k]!=null?' · ₹'+q2(c.rates[p.k])+'/'+esc(unitS(unit(p.k))):'')+'</span>'}).join('');
+  var billing=c.billingName&&c.billingName!==c.name?'<div class="small muted">Billing: '+esc(c.billingName)+'</div>':'';
+  var asg=(c.assignedTo||'').trim()?'<span class="chip" style="background:var(--accent-soft);color:var(--accent)">Assigned to '+esc(c.assignedTo)+'</span>':'';
+  var btns=c.archived?
+    '<button class="btn sm" type="button" data-act="restore" data-id="'+esc(c.id)+'">Restore</button><button class="btn sm" type="button" data-act="editClient" data-id="'+esc(c.id)+'">Edit</button><button class="btn sm danger" type="button" data-act="delClient" data-id="'+esc(c.id)+'">Delete permanently</button>':
+    '<button class="btn sm" type="button" data-act="editClient" data-id="'+esc(c.id)+'">Edit</button><button class="btn sm danger" type="button" data-act="archive" data-id="'+esc(c.id)+'">Archive</button>';
+  return '<div class="card"><div class="top"><div style="min-width:0"><h3>'+esc(c.name)+'</h3>'+billing+'</div>'+(c.sample?'<span class="chip">Sample</span>':'')+'</div>'+
+   (c.address?'<div class="small muted" style="margin:6px 0;white-space:pre-line;overflow-wrap:anywhere">'+esc(c.address)+'</div>':'')+
+   contacts+'<div class="chips">'+prods+'</div><div class="chips">'+asg+'<span class="chip">'+esc(daysText(c.days))+'</span></div><div class="actions">'+btns+'</div></div>';
+}
+
+/* ----- Daily tab ----- */
+function dayTotals(date){
+  var t={DTM:0,TM:0,Ghee:0},n={logged:0,pending:0,none:0};
+  dueFiltered(date).forEach(function(c){
+    var s=statusOf(date,c.id);n[s]++;
+    if(s==='logged'){var e=entryOf(date,c.id);PRODUCTS.forEach(function(p){t[p.k]+=Number(e.qty&&e.qty[p.k])||0})}
+  });
+  return {t:t,n:n};
+}
+function draftKey(d,c,p){return d+'|'+c+'|'+p}
+function draftVal(date,c,p){
+  var k=draftKey(date,c.id,p);if(S.drafts[k]!==undefined)return S.drafts[k];
+  var e=entryOf(date,c.id);
+  if(e&&e.status==='logged'){var v=e.qty&&e.qty[p];return v==null?'':q2(v)}
+  return q2(c.products[p]);
+}
+function viewDaily(){
+  if(!S.clients.length)return '<h2>Daily orders</h2><div class="empty"><h3>Add a client to start logging orders</h3><p class="muted">Each client\'s order row, and the "yet to be logged" alert, appear here once you have at least one active client with delivery days. Add your first client, or load sample data to try it out.</p><div class="actions" style="justify-content:center"><button class="btn primary" type="button" data-act="addClient">Add first client</button><button class="btn" type="button" data-act="loadSample">Load sample data</button></div></div>';
+  var date=S.date,today=todayIso(),allDue=dueClients(date);
+  if(S.dAssign&&S.dAssign!=='__none'&&!assignees().some(function(n){return normName(n)===normName(S.dAssign)}))S.dAssign='';
+  var due=dueFiltered(date),tot=dayTotals(date);
+  var dn=DOWFULL[dow(date)-1];
+  var h='<h2>Daily orders</h2><div class="datebar">'+
+   '<button class="btn" type="button" data-act="day" data-id="-1" aria-label="Previous day">&larr;</button>'+
+   '<div class="lbl">'+dn.slice(0,3)+', '+fmt(date)+(date===today?' <span class="chip">Today</span>':'')+'</div>'+
+   '<input type="date" id="datePick" data-sel="date" value="'+date+'" aria-label="Pick a date">'+
+   (date!==today?'<button class="btn" type="button" data-act="day" data-id="today">Today</button>':'')+
+   '<button class="btn" type="button" data-act="day" data-id="1" aria-label="Next day">&rarr;</button></div>';
+  h+='<div class="sumbar">'+PRODUCTS.map(function(p){return '<div class="stat"><span class="p-'+p.k+'"><i class="dot"></i>'+p.k+'</span><b>'+q2(tot.t[p.k])+'</b><span style="letter-spacing:0;text-transform:none;font-weight:500">'+esc(unit(p.k))+' logged</span></div>'}).join('')+
+   '<div class="stat"><span>Entries</span><b>'+tot.n.logged+'/'+due.length+'</b><span style="letter-spacing:0;text-transform:none;font-weight:500">'+tot.n.pending+' pending · '+tot.n.none+' no order</span></div></div>';
+  var loaded=!!S.readyM[date.slice(0,7)];
+  var people=assignees().filter(function(n){return allDue.some(function(c){return matchAssign(c,n)})});
+  var hasUn=allDue.some(function(c){return matchAssign(c,'__none')});
+  var chip=function(id,label){var list=allDue.filter(function(c){return matchAssign(c,id)});var pend=loaded?list.filter(function(c){return statusOf(date,c.id)==='pending'}).length:null;
+    return '<button type="button" data-act="dassign" data-id="'+esc(id)+'" aria-pressed="'+(normName(S.dAssign)===normName(id))+'">'+esc(label)+' <span class="muted small">'+(pend===null?list.length:pend+'/'+list.length)+'</span></button>'};
+  if(people.length){
+    h+='<div class="field"><label class="fl">Filter by assigned person <span class="muted" style="font-weight:400">(pending / total for the day)</span></label><div class="hscroll"><div class="seg" role="group" aria-label="Assigned person" style="flex-wrap:nowrap;width:max-content">'+chip('','All')+people.map(function(n){return chip(n,n)}).join('')+(hasUn?chip('__none','Unassigned'):'')+'</div></div></div>';
+  }
+  var who=S.dAssign==='__none'?'unassigned clients':S.dAssign;
+  h+='<div class="toolbar"><button class="btn" type="button" data-act="dailyPdf"'+(due.length?'':' disabled')+'>Print Daily Sheet (PDF)'+(S.dAssign?' \u2013 '+esc(who):'')+'</button></div>';
+  if(!S.readyM[date.slice(0,7)]){ensureMonth(date.slice(0,7));return h+'<div class="empty">Loading orders…</div>'}
+  if(!due.length&&allDue.length)return h+'<div class="empty"><h3>No deliveries for this person</h3><p class="muted">Nothing is scheduled for '+esc(who)+' on '+dn+'.</p></div>';
+  if(!due.length)return h+'<div class="empty"><h3>No deliveries scheduled</h3><p class="muted">No active client has '+dn+' as a delivery day. Check the delivery days on the Clients tab if you expected someone here.</p></div>';
+  if(!tot.n.pending)h+='<div class="note">All entries for this day are logged.</div>';
+  return h+due.map(function(c){return dailyRow(c,date)}).join('');
+}
+function dailyRow(c,date){
+  var st=statusOf(date,c.id);
+  var lbl={logged:'Logged',pending:'Pending',none:'No order today'}[st];
+  var ps=PRODUCTS.filter(function(p){return c.products[p.k]!=null});
+  var qs=ps.map(function(p){
+    var id='q-'+c.id+'-'+p.k;
+    return '<div class="q p-'+p.k+'"><label class="n" for="'+id+'"><i class="dot"></i>'+p.k+'</label><input id="'+id+'" type="number" inputmode="decimal" min="0" step="any" data-draft="'+esc(draftKey(date,c.id,p.k))+'" value="'+esc(draftVal(date,c,p.k))+'"'+(S.readOnly?' disabled':'')+'><span class="u">'+esc(unit(p.k))+'</span></div>';
+  }).join('');
+  var rd=S.readOnly?' disabled':'';
+  return '<div class="row s-'+st+'" id="row-'+esc(c.id)+'"><div class="top" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div style="min-width:0"><strong style="overflow-wrap:anywhere">'+esc(c.name)+'</strong>'+((c.assignedTo||'').trim()?'<div class="small muted">Assigned to '+esc(c.assignedTo)+'</div>':'')+'</div><span class="pill '+st+'">'+lbl+'</span></div>'+
+   '<div class="qs">'+qs+'</div><div class="actions">'+
+   '<button class="btn primary sm" type="button" data-act="saveOrder" data-id="'+esc(c.id)+'"'+rd+'>'+(st==='logged'?'Update':'Save')+'</button>'+
+   (st!=='none'?'<button class="btn sm" type="button" data-act="noOrder" data-id="'+esc(c.id)+'"'+rd+'>No order today</button>':'')+
+   (st!=='pending'?'<button class="btn sm" type="button" data-act="resetOrder" data-id="'+esc(c.id)+'"'+rd+'>Reset to pending</button>':'')+
+   '</div></div>';
+}
+
+/* ----- Monthly model & tab ----- */
+function clientRow(c,days,today){
+  var cells={},tot={DTM:0,TM:0,Ghee:0},ordered=0,missed=[],pOrd={DTM:0,TM:0,Ghee:0};
+  days.forEach(function(d){
+    var e=entryOf(d,c.id),exp=isExpected(c,d),st='off';
+    if(e)st=e.status==='logged'?'logged':'none';else if(exp&&d<=today)st='missed';else if(exp)st='upcoming';
+    cells[d]={e:e,st:st};
+    if(st==='logged'){var any=false;PRODUCTS.forEach(function(p){var v=Number(e.qty&&e.qty[p.k])||0;tot[p.k]+=v;if(v>0){any=true;pOrd[p.k]++}});if(any)ordered++}
+    if(st==='missed')missed.push(d);
+  });
+  return {c:c,cells:cells,tot:tot,ordered:ordered,missed:missed,pOrd:pOrd};
+}
+function monthModel(ym){
+  var days=monthDays(ym),today=todayIso();
+  var list=S.clients.filter(function(c){return !c.archived||days.some(function(d){return entryOf(d,c.id)})}).sort(byName);
+  var rows=list.map(function(c){return clientRow(c,days,today)});
+  var totals={DTM:0,TM:0,Ghee:0};rows.forEach(function(r){PRODUCTS.forEach(function(p){totals[p.k]+=r.tot[p.k]})});
+  return {ym:ym,days:days,rows:rows,totals:totals};
+}
+function cellText(cell,prod){
+  var e=cell.e;
+  if(cell.st==='missed')return {t:'!',c:'miss'};
+  if(cell.st==='none')return {t:'×',c:'none'};
+  if(cell.st!=='logged')return {t:'',c:''};
+  if(prod==='ALL'){return {t:PRODUCTS.map(function(p){var v=e.qty&&e.qty[p.k];return v==null?'–':q2(v)}).join('/'),c:''}}
+  var v=e.qty&&e.qty[prod];return {t:v==null?'':q2(v),c:''};
+}
+function viewMonthly(){
+  var ym=S.month;ensureMonth(ym);
+  var y=Number(ym.slice(0,4)),m=Number(ym.slice(5));var cy=Number(todayIso().slice(0,4));
+  var ys=[];for(var i=cy-4;i<=cy+1;i++)ys.push(i);if(ys.indexOf(y)<0)ys.push(y);ys.sort();
+  var h='<h2>Monthly tracker</h2><div class="toolbar"><select data-sel="mm" style="width:auto" aria-label="Month">'+MONTHS.map(function(n,i){return '<option value="'+(i+1)+'"'+(i+1===m?' selected':'')+'>'+n+'</option>'}).join('')+'</select>'+
+   '<select data-sel="my" style="width:auto" aria-label="Year">'+ys.map(function(n){return '<option'+(n===y?' selected':'')+'>'+n+'</option>'}).join('')+'</select>'+
+   '<div class="seg" role="group" aria-label="Product view">'+['ALL','DTM','TM','Ghee'].map(function(k){return '<button type="button" data-act="mprod" data-id="'+k+'" aria-pressed="'+(S.mprod===k)+'">'+(k==='ALL'?'All':k)+'</button>'}).join('')+'</div></div>';
+  if(!S.readyM[ym])return h+'<div class="empty">Loading orders…</div>';
+  var M=monthModel(ym);
+  if(!M.rows.length)return h+'<div class="empty">No clients yet. Add clients on the Clients tab.</div>';
+  var P=S.mprod;
+  var head='<tr><th>Client</th>'+M.days.map(function(d){var n=Number(d.slice(8));return '<th title="'+DOW[dow(d)-1]+' '+fmt(d)+'">'+n+'<div class="muted small" style="font-weight:500">'+DOW[dow(d)-1].slice(0,2)+'</div></th>'}).join('')+
+    (P==='ALL'?PRODUCTS.map(function(p){return '<th class="tot">'+p.k+'</th>'}).join(''):'<th class="tot">Total</th>')+'<th class="tot">Days</th><th class="tot">Missed</th></tr>';
+  var body=M.rows.map(function(r){
+    var tds=M.days.map(function(d){var x=cellText(r.cells[d],P);return '<td class="'+x.c+'">'+esc(x.t)+'</td>'}).join('');
+    var tt=P==='ALL'?PRODUCTS.map(function(p){return '<td class="tot">'+q2(r.tot[p.k])+'</td>'}).join(''):'<td class="tot">'+q2(r.tot[P])+'</td>';
+    return '<tr><td title="'+esc(r.c.name)+'">'+esc(r.c.name)+(r.c.archived?' <span class="chip">Archived</span>':'')+'</td>'+tds+tt+'<td class="tot">'+(P==='ALL'?r.ordered:r.pOrd[P])+'</td><td class="tot">'+r.missed.length+'</td></tr>';
+  }).join('');
+  h+='<div class="hscroll"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>';
+  h+='<div class="legend">'+(P==='ALL'?'<span>Cells show DTM / TM / Ghee</span>':'')+'<span><i class="sw" style="background:var(--bad-bg)"></i>! not logged</span><span><i class="sw" style="background:var(--idle-bg)"></i>× no order</span><span>Blank = not a delivery day</span></div>';
+  h+='<h3>Summary for '+monthLabel(ym)+'</h3><div class="sumbar">'+PRODUCTS.map(function(p){return '<div class="stat"><span class="p-'+p.k+'"><i class="dot"></i>'+p.k+'</span><b>'+q2(M.totals[p.k])+'</b><span style="letter-spacing:0;text-transform:none;font-weight:500">'+esc(unit(p.k))+'</span></div>'}).join('')+'</div>';
+  h+='<div class="hscroll"><table><thead><tr><th>Client</th>'+PRODUCTS.map(function(p){return '<th>'+p.k+' ('+esc(unit(p.k))+')</th>'}).join('')+'<th>Days ordered</th><th>Days not logged</th></tr></thead><tbody>'+
+   M.rows.map(function(r){return '<tr><td>'+esc(r.c.name)+'</td>'+PRODUCTS.map(function(p){return '<td>'+q2(r.tot[p.k])+'</td>'}).join('')+'<td>'+r.ordered+'</td><td'+(r.missed.length?' class="miss"':'')+' title="'+esc(r.missed.map(fmt).join(', '))+'">'+r.missed.length+(r.missed.length?' <span class="small" style="font-weight:500">('+r.missed.map(function(d){return Number(d.slice(8))}).join(', ')+')</span>':'')+'</td></tr>'}).join('')+'</tbody></table></div>';
+  if(!S.repClient||!S.clients.some(function(c){return c.id===S.repClient}))S.repClient=(S.clients.slice().sort(byName)[0]||{}).id||'';
+  h+='<h3 style="margin-top:22px">Download reports for '+monthLabel(ym)+'</h3><div class="reports">'+
+   '<div class="card"><h3>Per-client report</h3><label class="fl" for="repClient">Client</label><select id="repClient" data-sel="repClient">'+S.clients.slice().sort(byName).map(function(c){return '<option value="'+esc(c.id)+'"'+(c.id===S.repClient?' selected':'')+'>'+esc(c.name)+(c.archived?' (archived)':'')+'</option>'}).join('')+'</select>'+repBtns('client')+'</div>'+
+   '<div class="card"><h3>Per-product report</h3><label class="fl" for="repProd">Product</label><select id="repProd" data-sel="repProd">'+PRODUCTS.map(function(p){return '<option value="'+p.k+'"'+(p.k===S.repProd?' selected':'')+'>'+p.k+' – '+p.name+'</option>'}).join('')+'</select>'+repBtns('product')+'</div>'+
+   '<div class="card"><h3>Full month report</h3><p class="muted small" style="margin-top:0">All clients and all products.</p>'+repBtns('full')+'</div></div>';
+  return h;
+}
+function repBtns(kind){
+  return '<div class="actions"><button class="btn sm primary" type="button" data-act="report" data-id="'+kind+':pdf">PDF</button><button class="btn sm" type="button" data-act="report" data-id="'+kind+':xlsx">Excel</button><button class="btn sm" type="button" data-act="report" data-id="'+kind+':csv">CSV</button></div>';
+}
+
+/* ---------- client form ---------- */
+function newForm(c){
+  var f={id:c?c.id:null,name:c?c.name:'',same:c?(c.billingName===c.name):false,billingName:c?c.billingName:'',address:c?(c.address||''):'',assignedTo:c?(c.assignedTo||''):'',
+    contacts:c&&c.contacts&&c.contacts.length?c.contacts.map(function(x){return {name:x.name||'',phone:x.phone||'',role:x.role||''}}):[{name:'',phone:'',role:''}],
+    prod:{},days:c?(c.days||[]).slice():[1,2,3,4,5,6,7],err:{}};
+  PRODUCTS.forEach(function(p){var v=c&&c.products&&c.products[p.k];var r=c&&c.rates&&c.rates[p.k];f.prod[p.k]={on:v!=null,qty:v!=null?q2(v):'',rate:r!=null?q2(r):''}});
+  return f;
+}
+function openForm(c){F=newForm(c);renderForm();var n=document.getElementById('f-name');if(n)n.focus()}
+function renderForm(){
+  var e=F.err||{};var ce=e.contacts||{};
+  var h='<div class="overlay"><div class="sheet" role="dialog" aria-modal="true" aria-label="Client form"><h2>'+(F.id?'Edit client':'Add client')+'</h2>'+
+   (e.general?'<div class="err" style="margin-bottom:10px">'+esc(e.general)+'</div>':'')+
+   '<div class="field"><label class="fl" for="f-name">Client name *</label><input id="f-name" type="text" data-f="name" value="'+esc(F.name)+'" autocomplete="off">'+(e.name?'<div class="err">'+esc(e.name)+'</div>':'')+'</div>'+
+   '<div class="field"><label class="fl" for="f-bill">Billing name *</label><input id="f-bill" type="text" data-f="billingName" value="'+esc(F.same?F.name:F.billingName)+'"'+(F.same?' disabled':'')+' autocomplete="off">'+
+   '<label class="small" style="display:flex;gap:6px;align-items:center;margin-top:6px"><input type="checkbox" data-same="1"'+(F.same?' checked':'')+'> Same as client name</label>'+(e.billing?'<div class="err">'+esc(e.billing)+'</div>':'')+'</div>'+
+   '<div class="field"><label class="fl" for="f-addr">Address</label><textarea id="f-addr" data-f="address">'+esc(F.address)+'</textarea></div>'+
+   '<div class="field"><label class="fl" for="f-assign">Assigned to <span class="muted" style="font-weight:400">(optional, e.g. delivery person)</span></label><input id="f-assign" type="text" list="assignList" data-f="assignedTo" value="'+esc(F.assignedTo)+'" autocomplete="off"><datalist id="assignList">'+assignees().map(function(n){return '<option value="'+esc(n)+'">'}).join('')+'</datalist></div>'+
+   '<div class="field"><label class="fl">Contact persons * <span class="muted" style="font-weight:400">(at least one)</span></label>'+
+   F.contacts.map(function(c,i){var x=ce[i]||{};
+     return '<div class="contact"><div class="grid3"><div><input type="text" placeholder="Name" aria-label="Contact name" data-c="'+i+':name" value="'+esc(c.name)+'">'+(x.name?'<div class="err">'+esc(x.name)+'</div>':'')+'</div>'+
+      '<div><input type="text" inputmode="numeric" placeholder="10-digit phone" aria-label="Phone" data-c="'+i+':phone" value="'+esc(c.phone)+'" maxlength="14">'+(x.phone?'<div class="err">'+esc(x.phone)+'</div>':'')+'</div>'+
+      '<div><input type="text" placeholder="Role (optional)" aria-label="Role" data-c="'+i+':role" value="'+esc(c.role)+'"></div>'+
+      '<div>'+(F.contacts.length>1?'<button class="btn sm danger" type="button" data-act="rmContact" data-id="'+i+'" aria-label="Remove contact">Remove</button>':'')+'</div></div></div>';
+   }).join('')+'<button class="btn sm" type="button" data-act="addContact">+ Add another contact</button></div>'+
+   '<div class="field"><label class="fl">Products supplied, default quantity &amp; rate * <span class="muted" style="font-weight:400">(rate is optional)</span></label>'+
+   PRODUCTS.map(function(p){var s=F.prod[p.k];
+     return '<div class="prow"><label class="nm"><input type="checkbox" data-pt="'+p.k+'"'+(s.on?' checked':'')+'><i class="dot p-'+p.k+'"></i>'+p.k+' <span class="muted small" style="font-weight:400">'+p.name+'</span></label>'+
+      '<input type="number" min="0" step="any" inputmode="decimal" data-pq="'+p.k+'" value="'+esc(s.qty)+'" placeholder="Qty"'+(s.on?'':' disabled')+' aria-label="'+p.k+' default quantity"><span class="muted small">'+esc(unit(p.k))+'</span>'+
+      '<span class="muted small" style="margin-left:6px">Rate ₹</span><input type="number" min="0" step="any" inputmode="decimal" data-pr="'+p.k+'" value="'+esc(s.rate)+'" placeholder="per '+esc(unitS(unit(p.k)))+'"'+(s.on?'':' disabled')+' aria-label="'+p.k+' rate in rupees per '+esc(unitS(unit(p.k)))+'"><span class="muted small">/'+esc(unitS(unit(p.k)))+'</span>'+
+      (e.products&&e.products[p.k]?'<div class="err" style="flex:1 1 100%">'+esc(e.products[p.k])+'</div>':'')+'</div>';
+   }).join('')+(e.prodAny?'<div class="err">'+esc(e.prodAny)+'</div>':'')+'</div>'+
+   '<div class="field"><label class="fl">Delivery days *</label><div class="days">'+DOW.map(function(d,i){return '<label><input type="checkbox" data-d="'+(i+1)+'"'+(F.days.indexOf(i+1)>=0?' checked':'')+'>'+d+'</label>'}).join('')+'</div>'+(e.days?'<div class="err">'+esc(e.days)+'</div>':'')+'</div>'+
+   '<div class="foot"><button class="btn" type="button" data-act="closeModal">Cancel</button><button class="btn primary" type="button" data-act="saveClient">Save client</button></div></div></div>';
+  $('#modal').innerHTML=h;
+}
+function validateForm(){
+  var e={},ok=true;
+  var nm=F.name.trim();
+  if(!nm){e.name='Enter the client name.';ok=false}
+  else if(S.clients.some(function(c){return c.id!==F.id&&normName(c.name)===normName(nm)})){e.name='A client with this name already exists.';ok=false}
+  var bn=(F.same?F.name:F.billingName).trim();if(!bn){e.billing='Enter the billing name.';ok=false}
+  var ce={},cleaned=[];
+  F.contacts.forEach(function(c,i){
+    var filled=c.name.trim()||c.phone.trim()||c.role.trim();
+    if(i===0||filled){
+      var x={},ph=c.phone.replace(/[\s-]/g,'');
+      if(!c.name.trim())x.name='Enter a name.';
+      if(!/^\d{10}$/.test(ph))x.phone='Phone must be exactly 10 digits.';
+      if(x.name||x.phone){ce[i]=x;ok=false}else cleaned.push({name:c.name.trim(),phone:ph,role:c.role.trim()});
+    }
+  });
+  if(Object.keys(ce).length)e.contacts=ce;
+  var pe={},prods={},rates={},any=false;
+  PRODUCTS.forEach(function(p){var s=F.prod[p.k];if(!s.on)return;any=true;var v=s.qty===''?NaN:Number(s.qty);
+    if(isNaN(v))pe[p.k]='Enter a default quantity.';else if(v<0)pe[p.k]='Quantity cannot be negative.';else if(v===0)pe[p.k]='Enter a quantity above 0.';else prods[p.k]=v;
+    var rv=(s.rate===''||s.rate==null)?null:Number(s.rate);if(rv!==null){if(isNaN(rv)||rv<0){if(!pe[p.k])pe[p.k]='Enter a valid rate (0 or more), or leave it blank.'}else rates[p.k]=rv}});
+  if(!any){e.prodAny='Select at least one product.';ok=false}
+  if(Object.keys(pe).length){e.products=pe;ok=false}
+  if(!F.days.length){e.days='Select at least one delivery day.';ok=false}
+  F.err=e;
+  return ok?{name:nm,billingName:bn,address:F.address.trim(),assignedTo:F.assignedTo.trim().replace(/\s+/g,' '),contacts:cleaned,products:prods,rates:rates,days:F.days.slice().sort(function(a,b){return a-b})}:null;
+}
+
+/* ---------- actions ---------- */
+function getClient(id){return S.clients.find(function(c){return c.id===id})}
+function stripId(c){var o=Object.assign({},c);delete o.id;return o}
+function readDraft(date,c){
+  var qty={},bad=null;
+  PRODUCTS.forEach(function(p){
+    if(c.products[p.k]==null)return;
+    var raw=draftVal(date,c,p.k);var v=raw===''?0:Number(raw);
+    if(isNaN(v)||v<0)bad=p.k;else qty[p.k]=v;
+  });
+  return bad?{bad:bad}:{qty:qty};
+}
+function clearDrafts(date,cid){Object.keys(S.drafts).forEach(function(k){if(k.indexOf(date+'|'+cid+'|')===0)delete S.drafts[k]})}
+
+async function onAct(act,id,el){
+  switch(act){
+  case 'tab':S.tab=id;if(id==='daily')ensureMonth(S.date.slice(0,7));if(id==='monthly')ensureMonth(S.month);render();window.scrollTo(0,0);break;
+  case 'settings':openSettings();break;
+  case 'closeModal':$('#modal').innerHTML='';F=null;break;
+  case 'dismissAlert':S.alertDismissed=S.date+':'+pendingList(S.date).map(function(c){return c.id}).join(',');render();break;
+  case 'goto':$('#modal').innerHTML='';S.tab='daily';flashId=id;render();break;
+  case 'showArch':S.showArchived=id==='1';render();break;
+  case 'addClient':openForm(null);break;
+  case 'editClient':openForm(getClient(id));break;
+  case 'addContact':F.contacts.push({name:'',phone:'',role:''});renderForm();break;
+  case 'rmContact':F.contacts.splice(Number(id),1);renderForm();break;
+  case 'saveClient':{
+    var p=validateForm();
+    if(!p){renderForm();var er=document.querySelector('#modal .err');if(er)er.scrollIntoView({block:'center'});return}
+    var old=F.id?getClient(F.id):null;
+    var obj=Object.assign({},old?stripId(old):{activeFrom:todayIso(),createdAt:new Date().toISOString()},p);
+    var cid=F.id||db.collection('clients').doc().id;
+    if(!(await guard(saveClientDoc(cid,obj))))return;
+    $('#modal').innerHTML='';F=null;toast('Client saved');break;
+  }
+  case 'archive':{
+    var c=getClient(id);
+    if(!await ask('Archive '+c.name+'?','They will disappear from the Daily Tracker. Past orders stay in monthly reports, and you can restore them any time.','Archive',false))return;
+    if(!(await guard(saveClientDoc(id,Object.assign(stripId(c),{archived:true,archivedOn:todayIso()})))))return;toast('Client archived');break;
+  }
+  case 'restore':{
+    var c2=stripId(getClient(id));c2.archived=false;delete c2.archivedOn;c2.activeFrom=todayIso();
+    if(!(await guard(saveClientDoc(id,c2))))return;toast('Client restored');break;
+  }
+  case 'delClient':{
+    var c3=getClient(id);
+    if(!await ask('Delete '+c3.name+' permanently?','This cannot be undone. All past orders for this client will be removed from the monthly reports. To keep history, use Archive instead.','Delete permanently',true))return;
+    if(!(await guard(deleteClientForever(id))))return;toast('Client deleted');break;
+  }
+  case 'masterPdf':masterPdf();break;
+  case 'day':S.date=id==='today'?todayIso():addDays(S.date,Number(id));ensureMonth(S.date.slice(0,7));render();break;
+  case 'saveOrder':{
+    var cl=getClient(id),r=readDraft(S.date,cl);
+    if(r.bad){toast('Quantity for '+r.bad+' must be a number, 0 or more.','bad');return}
+    var date=S.date;
+    if(!(await guard(mutateOrders(date,function(en){en[id]={status:'logged',qty:r.qty,at:new Date().toISOString()}}))))return;
+    clearDrafts(date,id);toast('Saved '+cl.name);render();break;
+  }
+  case 'noOrder':{
+    var date2=S.date;
+    if(!(await guard(mutateOrders(date2,function(en){en[id]={status:'none',at:new Date().toISOString()}}))))return;
+    clearDrafts(date2,id);toast('Marked: no order today');render();break;
+  }
+  case 'resetOrder':{
+    var c4=getClient(id);
+    if(!await ask('Reset entry?',c4.name+' on '+fmt(S.date)+' will go back to Pending and the logged quantities will be removed.','Reset',true))return;
+    var date3=S.date;if(!(await guard(mutateOrders(date3,function(en){delete en[id]}))))return;clearDrafts(date3,id);break;
+  }
+  case 'mprod':S.mprod=id;render();break;
+    case 'dassign':S.dAssign=id||'';render();break;
+  case 'report':runReport(id);break;
+  case 'loadSample':await loadSample();break;
+  case 'clearSample':await clearSample();break;
+  case 'backup':await backup();break;
+  case 'restoreFile':document.getElementById('restoreInput').click();break;
+  case 'saveSettings':{
+    var name=document.getElementById('s-name').value.trim();if(!name){toast('Enter the dairy name.','bad');return}
+    var units={};PRODUCTS.forEach(function(p){var v=document.getElementById('s-u-'+p.k).value.trim();units[p.k]=v||DEFAULT_UNITS[p.k]});
+    if(!(await guard(saveSettings({dairyName:name,units:units}))))return;$('#modal').innerHTML='';toast('Settings saved');break;
+  }
+  }
+}
+async function deleteClientForever(id){
+  await enqueue(function(){return db.doc('clients/'+id).delete()});
+  var all=await db.collection('orders').get();
+  for(var i=0;i<all.docs.length;i++){
+    var d=all.docs[i];var en=(d.data()||{}).entries||{};
+    if(en[id])await mutateOrders(d.id,function(e){delete e[id]});
+  }
+}
+
+/* ---------- settings, backup, sample ---------- */
+function openSettings(){
+  var hasSample=S.clients.some(function(c){return c.sample});
+  $('#modal').innerHTML='<div class="overlay"><div class="sheet" role="dialog" aria-modal="true" aria-label="Settings"><h2>Settings &amp; data</h2>'+
+   '<div class="field"><label class="fl" for="s-name">Dairy name (shown on every PDF)</label><input id="s-name" type="text" value="'+esc(S.settings.dairyName)+'"></div>'+
+   '<label class="fl">Units</label><div class="grid2" style="grid-template-columns:repeat(3,1fr)">'+PRODUCTS.map(function(p){return '<div><div class="small muted">'+p.k+'</div><input type="text" id="s-u-'+p.k+'" value="'+esc(unit(p.k))+'" aria-label="'+p.k+' unit"></div>'}).join('')+'</div>'+
+   '<div class="foot" style="margin-bottom:6px"><button class="btn primary" type="button" data-act="saveSettings">Save settings</button></div><hr>'+
+   '<h3>Backup &amp; restore</h3><p class="muted small" style="margin-top:0">Backup downloads every client, order and setting as one JSON file. Restore replaces everything currently stored with the contents of a backup file.</p>'+
+   '<div class="actions" style="margin-top:0"><button class="btn" type="button" data-act="backup">Download backup (JSON)</button><button class="btn" type="button" data-act="restoreFile">Restore from file…</button><input type="file" id="restoreInput" accept=".json,application/json" hidden></div><hr>'+
+   '<h3>Sample data</h3><p class="muted small" style="margin-top:0">Adds 5 sample clients with orders for this month so you can test every feature.</p>'+
+   '<div class="actions" style="margin-top:0"><button class="btn" type="button" data-act="loadSample">Load sample data</button><button class="btn danger" type="button" data-act="clearSample"'+(hasSample?'':' disabled')+'>Clear sample data</button></div>'+
+   '<div class="foot"><button class="btn" type="button" data-act="closeModal">Close</button></div></div></div>';
+}
+async function saveFile(name,data){
+  if(!dl){toast('Downloads are not available in this view. Open the page inside Claude.','bad');return}
+  try{await dl.save({filename:name,data:data});toast('Saved '+name)}
+  catch(e){if(e&&e.code==='declined')return;toast('Could not save the file: '+errMsg(e),'bad')}
+}
+async function backup(){
+  try{
+    var cs=await db.collection('clients').get(),os=await db.collection('orders').get();
+    var data={app:'dairy-desk',version:1,exportedAt:new Date().toISOString(),settings:S.settingsRaw,
+      clients:cs.docs.map(function(d){return Object.assign({id:d.id},d.data())}),
+      orders:os.docs.map(function(d){return {date:d.id,entries:(d.data()||{}).entries||{}}})};
+    await saveFile('dairy-desk-backup-'+todayIso()+'.json',JSON.stringify(data,null,1));
+  }catch(e){toast('Backup failed: '+errMsg(e),'bad')}
+}
+async function restoreFrom(file){
+  var text;try{text=await file.text()}catch(e){toast('Could not read that file.','bad');return}
+  var d;try{d=JSON.parse(text)}catch(e){toast('That file is not a valid backup.','bad');return}
+  if(!d||d.app!=='dairy-desk'||!Array.isArray(d.clients)||!Array.isArray(d.orders)){toast('That file is not a Dairy Desk backup.','bad');return}
+  if(!await ask('Replace all data?','This deletes every client and order currently stored ('+S.clients.length+' clients) and replaces them with the backup ('+d.clients.length+' clients, '+d.orders.length+' order days). It cannot be undone.','Restore backup',true))return;
+  toast('Restoring… please wait');
+  try{
+    var cs=await db.collection('clients').get(),os=await db.collection('orders').get();
+    for(var i=0;i<cs.docs.length;i++){var cd=cs.docs[i].id;await enqueue(function(){return db.doc('clients/'+cd).delete()})}
+    for(var j=0;j<os.docs.length;j++){var od=os.docs[j].id;await enqueue(function(){return db.doc('orders/'+od).delete()})}
+    await enqueue(function(){return db.doc('settings/main').set(d.settings||{})});
+    for(var a=0;a<d.clients.length;a++){var c=d.clients[a];if(!c.id||!c.name)continue;await saveClientDoc(c.id,c)}
+    for(var b=0;b<d.orders.length;b++){var o=d.orders[b];if(!/^\d{4}-\d{2}-\d{2}$/.test(o.date))continue;await enqueue(function(){return db.doc('orders/'+o.date).set({date:o.date,month:o.date.slice(0,7),entries:o.entries||{}})})}
+    $('#modal').innerHTML='';toast('Backup restored');
+  }catch(e){toast('Restore stopped: '+errMsg(e),'bad')}
+}
+var SAMPLE=[
+ {name:'Hotel Sonar Bangla',billingName:'Sonar Bangla Hospitality Pvt Ltd',address:'12 Lake Road\nBallygunge, Kolkata 700019',contacts:[{name:'Rajesh Dutta',phone:'9000000101',role:'Purchase manager'},{name:'Sunita Paul',phone:'9000000102',role:'Kitchen'}],products:{DTM:40,TM:25,Ghee:5},days:[1,2,3,4,5,6,7],assignedTo:'Ramesh'},
+ {name:'Park Street Cafe',billingName:'Park Street Cafe',address:'48 Park Street\nKolkata 700016',contacts:[{name:'Meera Sen',phone:'9000000103',role:'Owner'}],products:{DTM:10,TM:15},days:[1,2,3,4,5,6],assignedTo:'Ramesh'},
+ {name:'Salt Lake Sweets',billingName:'Salt Lake Sweets & Namkeen',address:'CK Market, Sector II\nSalt Lake, Kolkata 700091',contacts:[{name:'Anil Ghosh',phone:'9000000104',role:'Manager'}],products:{TM:30,Ghee:12},days:[1,3,5],assignedTo:'Sunil'},
+ {name:'Ballygunge Nursing Home',billingName:'Ballygunge Care Foundation',address:'7 Gariahat Road\nKolkata 700029',contacts:[{name:'Dr. Rina Bose',phone:'9000000105',role:'Administrator'}],products:{DTM:60,TM:20},days:[1,2,3,4,5,6,7],assignedTo:'Sunil'},
+ {name:'Howrah Chai Corner',billingName:'Howrah Chai Corner',address:'Station Road\nHowrah 711101',contacts:[{name:'Kamal Shaw',phone:'9000000106',role:''}],products:{DTM:25},days:[2,4,6,7],assignedTo:'Ramesh'}
+];
+function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return (h>>>0)/4294967295}
+async function loadSample(){
+  var today=todayIso(),start=today.slice(0,8)+'01';
+  var existing={};S.clients.forEach(function(c){existing[normName(c.name)]=true});
+  toast('Loading sample data…');
+  try{
+    var made=[];
+    for(var i=0;i<SAMPLE.length;i++){
+      var s=SAMPLE[i];if(existing[normName(s.name)])continue;
+      var id=db.collection('clients').doc().id;
+      var obj=Object.assign({},s,{sample:true,activeFrom:start,createdAt:new Date().toISOString()});
+      await saveClientDoc(id,obj);made.push(Object.assign({id:id},obj));
+    }
+    for(var d=start;d<=today;d=addDays(d,1)){
+      var ents={};
+      made.forEach(function(c,ci){
+        if(!isExpected(c,d))return;
+        if(d===today){if(ci===0){ents[c.id]={status:'logged',qty:Object.assign({},c.products)}}return}
+        var r=hash(d+c.id);
+        if(r<0.10)return;
+        if(r<0.17){ents[c.id]={status:'none'};return}
+        var qty={};Object.keys(c.products).forEach(function(k){var f=1+(hash(d+c.id+k)-0.5)*0.3;qty[k]=Math.max(0.5,Math.round(c.products[k]*f*2)/2)});
+        ents[c.id]={status:'logged',qty:qty};
+      });
+      if(Object.keys(ents).length){await mutateOrders(d,function(en){Object.assign(en,ents)})}
+    }
+    await saveSettings({sampleLoaded:true});
+    $('#modal').innerHTML='';S.tab='daily';S.date=today;toast('Sample data loaded');render();
+  }catch(e){toast('Could not load sample data: '+errMsg(e),'bad')}
+}
+async function clearSample(){
+  var ids=S.clients.filter(function(c){return c.sample}).map(function(c){return c.id});
+  if(!ids.length)return;
+  if(!await ask('Clear sample data?','Removes the '+ids.length+' sample clients and all of their orders. Your own clients and orders are not touched.','Clear sample data',true))return;
+  try{
+    for(var i=0;i<ids.length;i++){var id=ids[i];await enqueue(function(){return db.doc('clients/'+id).delete()})}
+    var all=await db.collection('orders').get();
+    for(var j=0;j<all.docs.length;j++){
+      var d=all.docs[j],en=(d.data()||{}).entries||{};
+      if(ids.some(function(x){return en[x]}))await mutateOrders(d.id,function(e){ids.forEach(function(x){delete e[x]})});
+    }
+    $('#modal').innerHTML='';toast('Sample data cleared');
+  }catch(e){toast('Could not clear sample data: '+errMsg(e),'bad')}
+}
+
+/* ---------- reports: models ---------- */
+function repModel(kind,ym){
+  var days=monthDays(ym),today=todayIso(),title,head=[],body=[],foot=null,landscape=false,extra=null;
+  if(kind==='client'){
+    var c=getClient(S.repClient);if(!c)return null;
+    var row=clientRow(c,days,today);
+    var ps=PRODUCTS.filter(function(p){return c.products&&c.products[p.k]!=null||row.tot[p.k]>0});
+    title='Client Report - '+c.name;
+    head=['Date','Day'].concat(ps.map(function(p){return p.k+' ('+unit(p.k)+')'}),['Status']);
+    days.forEach(function(d){
+      var cell=row.cells[d],lab={logged:'Logged',none:'No order',missed:'Not logged',upcoming:'Upcoming',off:'-'}[cell.st];
+      body.push([fmt(d),DOW[dow(d)-1]].concat(ps.map(function(p){return cell.st==='logged'&&cell.e.qty&&cell.e.qty[p.k]!=null?Number(cell.e.qty[p.k]):''}),[lab]));
+    });
+    foot=['Monthly total',''].concat(ps.map(function(p){return Math.round(row.tot[p.k]*100)/100}),[row.ordered+' days ordered']);
+    return {title:title,head:head,body:body,foot:foot,landscape:false,file:'Client_'+fileSafe(c.name)+'_'+ym};
+  }
+  if(kind==='product')return prodModel(S.repProd,ym,days,today);
+  return null;
+}
+function prodModel(pk,ym,days,today){
+  var rows=days&&monthModel(ym).rows.filter(function(r){return (r.c.products&&r.c.products[pk]!=null)||r.tot[pk]>0});
+  var head=['Client'].concat(days.map(function(d){return String(Number(d.slice(8)))}),['Total ('+unit(pk)+')','Days']);
+  var body=rows.map(function(r){return [r.c.name].concat(days.map(function(d){var cl=r.cells[d];return cl.st==='logged'&&cl.e.qty&&cl.e.qty[pk]!=null&&Number(cl.e.qty[pk])!==0?Number(cl.e.qty[pk]):''}),[Math.round(r.tot[pk]*100)/100,r.pOrd[pk]])});
+  var foot=['Total'].concat(days.map(function(d,i){var s=0;rows.forEach(function(r){var cl=r.cells[d];if(cl.st==='logged')s+=Number(cl.e.qty&&cl.e.qty[pk])||0});return s?Math.round(s*100)/100:''}),[Math.round(rows.reduce(function(a,r){return a+r.tot[pk]},0)*100)/100,'']);
+  var p=PRODUCTS.find(function(x){return x.k===pk});
+  return {title:'Product Report - '+pk+' ('+p.name+')',head:head,body:body,foot:foot,landscape:true,file:'Product_'+pk+'_'+ym};
+}
+function summaryModel(ym){
+  var M=monthModel(ym);
+  var head=['Client'].concat(PRODUCTS.map(function(p){return p.k+' ('+unit(p.k)+')'}),['Days ordered','Days not logged','Dates not logged']);
+  var body=M.rows.map(function(r){return [r.c.name].concat(PRODUCTS.map(function(p){return Math.round(r.tot[p.k]*100)/100}),[r.ordered,r.missed.length,r.missed.map(function(d){return Number(d.slice(8))}).join(', ')])});
+  var foot=['Total'].concat(PRODUCTS.map(function(p){return Math.round(M.totals[p.k]*100)/100}),['','','']);
+  return {title:'Summary',head:head,body:body,foot:foot};
+}
+
+/* ---------- reports: output ---------- */
+function frame(doc,title,sub){
+  var n=doc.getNumberOfPages(),W=doc.internal.pageSize.getWidth(),H=doc.internal.pageSize.getHeight();
+  for(var i=1;i<=n;i++){
+    doc.setPage(i);
+    doc.setTextColor(20,32,43);doc.setFont('helvetica','bold');doc.setFontSize(15);doc.text(S.settings.dairyName,10,13);
+    doc.setFont('helvetica','normal');doc.setFontSize(11);doc.text(title,10,19.5);
+    doc.setFontSize(9);doc.setTextColor(90,100,110);doc.text(sub,W-10,13,{align:'right'});
+    doc.setDrawColor(190,200,208);doc.line(10,22.5,W-10,22.5);
+    doc.text('Generated on '+nowStamp(),10,H-6);doc.text('Page '+i+' of '+n,W-10,H-6,{align:'right'});
+  }
+}
+function newPdf(land){
+  if(!window.jspdf||!window.jspdf.jsPDF){toast('The PDF library did not load. Check your connection and reload.','bad');return null}
+  return new window.jspdf.jsPDF({orientation:land?'landscape':'portrait',unit:'mm',format:'a4'});
+}
+function ptable(doc,m,opts){
+  var fm=function(v){return typeof v==='number'?q2(v):(v==null?'':String(v))};
+  doc.autoTable(Object.assign({
+    head:[m.head],body:m.body.map(function(r){return r.map(fm)}),foot:m.foot?[m.foot.map(fm)]:undefined,
+    startY:26,margin:{top:26,left:10,right:10,bottom:12},theme:'grid',
+    styles:{fontSize:8,cellPadding:1.6,lineColor:[200,208,214],lineWidth:.15,textColor:[20,32,43],overflow:'linebreak'},
+    headStyles:{fillColor:[21,89,193],textColor:255,halign:'center'},footStyles:{fillColor:[228,238,252],textColor:[20,32,43],fontStyle:'bold'},
+    showFoot:'lastPage'
+  },opts||{}));
+}
+function gridStyles(m){
+  var cs={0:{cellWidth:34,halign:'left'}};var n=m.head.length;
+  for(var i=1;i<n;i++){cs[i]={halign:'center'}}
+  return {styles:{fontSize:6.5,cellPadding:1},columnStyles:cs,headStyles:{halign:'center',fillColor:[21,89,193],textColor:255}};
+}
+async function masterPdf(){
+  var list=S.clients.filter(function(c){return !c.archived}).sort(byName);
+  var doc=newPdf(true);if(!doc)return;
+  var body=list.map(function(c,i){
+    return [String(i+1),c.name+(c.billingName!==c.name?'\nBilling: '+c.billingName:'\nBilling: same'),c.address||'-',(c.assignedTo||'-'),
+      (c.contacts||[]).map(function(x){return x.name+(x.role?' ('+x.role+')':'')+' - '+x.phone}).join('\n'),
+      PRODUCTS.filter(function(p){return c.products[p.k]!=null}).map(function(p){return p.k+': '+q2(c.products[p.k])+' '+unit(p.k)+(c.rates&&c.rates[p.k]!=null?' @ Rs. '+q2(c.rates[p.k])+'/'+unitS(unit(p.k)):'')}).join('\n'),
+      daysText(c.days)];
+  });
+  doc.autoTable({head:[['#','Client / billing name','Address','Assigned to','Contact persons','Products, default qty & rate','Delivery days']],body:body,startY:26,margin:{top:26,left:10,right:10,bottom:12},theme:'grid',
+    styles:{fontSize:8,cellPadding:2,lineColor:[200,208,214],lineWidth:.15,textColor:[20,32,43],valign:'top'},headStyles:{fillColor:[21,89,193],textColor:255},
+    columnStyles:{0:{cellWidth:8},1:{cellWidth:48},2:{cellWidth:48},3:{cellWidth:26},4:{cellWidth:56},5:{cellWidth:48},6:{cellWidth:43}}});
+  frame(doc,'Client Master List',plural(list.length,'active client'));
+  await saveFile('Client_Master_List_'+todayIso()+'.pdf',doc.output('arraybuffer'));
+}
+async function dailyPdf(){
+  var date=S.date,due=dueFiltered(date);var doc=newPdf(false);if(!doc)return;
+  var tot={DTM:0,TM:0,Ghee:0};
+  var body=due.map(function(c,i){
+    var st=statusOf(date,c.id),e=entryOf(date,c.id),row=[String(i+1),c.name+((c.assignedTo||'').trim()?'\nAssigned: '+c.assignedTo:'')];
+    PRODUCTS.forEach(function(p){
+      if(c.products[p.k]==null){row.push('-');return}
+      if(st==='none'){row.push('');return}
+      var v=st==='logged'?(Number(e.qty&&e.qty[p.k])||0):Number(c.products[p.k]);tot[p.k]+=v;row.push(q2(v));
+    });
+    row.push(st==='none'?'No order today':'');return row;
+  });
+  var foot=['','Daily totals'].concat(PRODUCTS.map(function(p){return q2(tot[p.k])}),['']);
+  doc.autoTable({head:[['#','Client'].concat(PRODUCTS.map(function(p){return p.k+' ('+unit(p.k)+')'}),['Signature / remarks'])],body:body,foot:[foot],startY:26,margin:{top:26,left:10,right:10,bottom:12},theme:'grid',
+    styles:{fontSize:10,cellPadding:3,minCellHeight:13,lineColor:[120,130,138],lineWidth:.2,textColor:[20,32,43],valign:'middle'},
+    headStyles:{fillColor:[21,89,193],textColor:255,halign:'center'},footStyles:{fillColor:[228,238,252],textColor:[20,32,43],fontStyle:'bold',halign:'center'},
+    columnStyles:{0:{cellWidth:9,halign:'center'},1:{cellWidth:50},2:{halign:'center',cellWidth:22},3:{halign:'center',cellWidth:22},4:{halign:'center',cellWidth:22},5:{cellWidth:'auto'}},showFoot:'lastPage'});
+  frame(doc,'Daily Delivery Sheet',DOWFULL[dow(date)-1]+', '+fmt(date));
+  await saveFile('Daily_Sheet_'+date+'.pdf',doc.output('arraybuffer'));
+}
+function csvEsc(v){v=v==null?'':String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}
+function toCsv(meta,head,body,foot){
+  var lines=meta.map(function(m){return csvEsc(m)});lines.push('');lines.push(head.map(csvEsc).join(','));
+  body.forEach(function(r){lines.push(r.map(csvEsc).join(','))});if(foot)lines.push(foot.map(csvEsc).join(','));
+  return '﻿'+lines.join('\r\n');
+}
+async function runReport(spec){
+  var parts=spec.split(':'),kind=parts[0],fmtk=parts[1],ym=S.month;
+  if(!S.readyM[ym]){toast('Orders for this month are still loading.','bad');return}
+  var sub=monthLabel(ym),meta=function(t){return [S.settings.dairyName,t,'Month: '+sub,'Generated on '+nowStamp()]};
+  if(kind==='full'){
+    var days=monthDays(ym),today=todayIso();
+    var models=PRODUCTS.map(function(p){return prodModel(p.k,ym,days,today)});var sm=summaryModel(ym);
+    var base='Full_Month_Report_'+ym;
+    if(fmtk==='pdf'){
+      var doc=newPdf(true);if(!doc)return;
+      ptable(doc,sm,{});
+      models.forEach(function(m,i){
+        doc.addPage('a4','landscape');
+        doc.setFontSize(11);doc.setTextColor(20,32,43);doc.text(PRODUCTS[i].k+' - '+PRODUCTS[i].name+' ('+unit(PRODUCTS[i].k)+')',10,30);
+        ptable(doc,m,Object.assign({startY:34},gridStyles(m)));
+      });
+      frame(doc,'Full Month Report',sub);
+      await saveFile(base+'.pdf',doc.output('arraybuffer'));
+    }else if(fmtk==='xlsx'){
+      var wb=XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(meta('Full Month Report').map(function(x){return [x]}).concat([[]],[sm.head],sm.body,[sm.foot])),'Summary');
+      models.forEach(function(m,i){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(meta(m.title).map(function(x){return [x]}).concat([[]],[m.head],m.body,[m.foot])),PRODUCTS[i].k)});
+      await saveFile(base+'.xlsx',XLSX.write(wb,{type:'array',bookType:'xlsx'}));
+    }else{
+      var rows=[];monthModel(ym).rows.forEach(function(r){days.forEach(function(d){var cl=r.cells[d];if(cl.st==='logged')PRODUCTS.forEach(function(p){var v=cl.e.qty&&cl.e.qty[p.k];if(v!=null&&Number(v)!==0)rows.push([r.c.name,fmt(d),p.k,Number(v),unit(p.k)])})})});
+      await saveFile(base+'.csv',toCsv(meta('Full Month Report'),['Client','Date','Product','Quantity','Unit'],rows,null));
+    }
+    return;
+  }
+  var m=repModel(kind,ym);if(!m){toast('Choose a client first.','bad');return}
+  var fname=m.file+'.'+fmtk;
+  if(fmtk==='pdf'){
+    var d2=newPdf(m.landscape);if(!d2)return;
+    ptable(d2,m,m.landscape?gridStyles(m):{columnStyles:{0:{halign:'center'},1:{halign:'center'}}});
+    frame(d2,m.title,sub);await saveFile(fname,d2.output('arraybuffer'));
+  }else if(fmtk==='xlsx'){
+    var wb2=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb2,XLSX.utils.aoa_to_sheet(meta(m.title).map(function(x){return [x]}).concat([[]],[m.head],m.body,[m.foot])),'Report');
+    await saveFile(fname,XLSX.write(wb2,{type:'array',bookType:'xlsx'}));
+  }else{
+    await saveFile(fname,toCsv(meta(m.title),m.head,m.body,m.foot));
+  }
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(ev){
+  var el=ev.target.closest('[data-act]');if(!el)return;
+  if(el.disabled)return;
+  var a=el.getAttribute('data-act');
+  if(a==='masterPdf'){masterPdf();return}
+  if(a==='dailyPdf'){dailyPdf();return}
+  onAct(a,el.getAttribute('data-id'),el);
+});
+document.addEventListener('input',function(ev){
+  var t=ev.target;
+  if(t.id==='search'){S.q=t.value;render();return}
+  if(t.dataset.draft!==undefined){S.drafts[t.dataset.draft]=t.value;return}
+  if(!F)return;
+  if(t.dataset.f){F[t.dataset.f]=t.value;if(t.dataset.f==='name'&&F.same){var bb=document.getElementById('f-bill');if(bb)bb.value=t.value}return}
+  if(t.dataset.c){var p=t.dataset.c.split(':');F.contacts[Number(p[0])][p[1]]=t.value;return}
+  if(t.dataset.pq){F.prod[t.dataset.pq].qty=t.value;return}
+  if(t.dataset.pr){F.prod[t.dataset.pr].rate=t.value;return}
+});
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t.id==='restoreInput'&&t.files&&t.files[0]){restoreFrom(t.files[0]);t.value='';return}
+  if(t.dataset.sel){
+    var s=t.dataset.sel;
+    if(s==='sort')S.sort=t.value;
+    else if(s==='assign')S.assign=t.value;
+    else if(s==='date'){if(/^\d{4}-\d{2}-\d{2}$/.test(t.value)){S.date=t.value;ensureMonth(t.value.slice(0,7))}}
+    else if(s==='mm'||s==='my'){var a=S.month.split('-');var y=s==='my'?t.value:a[0],m=s==='mm'?pad(t.value):a[1];S.month=y+'-'+m;ensureMonth(S.month)}
+    else if(s==='repClient')S.repClient=t.value;
+    else if(s==='repProd')S.repProd=t.value;
+    render();return;
+  }
+  if(!F)return;
+  if(t.dataset.same!==undefined){F.same=t.checked;if(t.checked)F.billingName=F.name;renderForm();return}
+  if(t.dataset.pt){F.prod[t.dataset.pt].on=t.checked;renderForm();return}
+  if(t.dataset.d){var d=Number(t.dataset.d);F.days=F.days.filter(function(x){return x!==d});if(t.checked)F.days.push(d);return}
+});
+document.addEventListener('keydown',function(ev){if(ev.key==='Escape'&&!$('#confirm').innerHTML){$('#modal').innerHTML='';F=null}});
+
+/* ---------- boot ---------- */
+(async function(){
+  render();
+  var slowT=setTimeout(function(){S.slow=true;render()},10000);
+  try{if(window.claude&&window.claude.use){db=await window.claude.use('db');dl=await window.claude.use('downloads');var u=await window.claude.use('user');if(u&&u.can&&u.can('data.write')===false)S.readOnly=true}}catch(e){db=null}
+  S.booted=true;
+  if(!db){clearTimeout(slowT);render();return}
+  subscribeBase();
+  var chk=setInterval(function(){if(S.ready.clients&&S.ready.settings){clearTimeout(slowT);clearInterval(chk)}},500);
+  // keep "today" correct if the page stays open past midnight IST
+  var lastToday=todayIso();
+  setInterval(function(){var t=todayIso();if(t!==lastToday){if(S.date===lastToday){S.date=t;ensureMonth(t.slice(0,7))}lastToday=t;render()}},60000);
+})();
+})();
+</script>
+
+</body></html>
